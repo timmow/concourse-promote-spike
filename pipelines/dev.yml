@@ -1,0 +1,28 @@
+---
+jobs:
+- name: job-hello-world
+  public: true
+  plan:
+  - get: resource-tutorial
+  - task: hello-world
+    config:
+      platform: linux
+      image: docker:///busybox
+      run:
+        path: echo
+        args: [hello world]
+
+resources:
+- name: resource-tutorial
+  type: git
+  source:
+    uri: https://github.com/timmow/concourse-promote-spike.git
+
+- name: dev-version
+  type: s3
+  source:
+    bucket: concourse-promote-spike-tmower
+    region_name: {{aws_region}}
+    access_key_id: {{aws_access_key_id}}
+    secret_access_key: {{aws_secret_access_key}}
+    versioned_file: bosh-secrets.yml
