@@ -11,6 +11,26 @@ jobs:
       run:
         path: echo
         args: [hello world]
+  - task: get-git-version
+    config:
+      platform: linux
+      image: docker:///busybox
+      inputs: 
+        - name: resource-tutorial
+      outputs:
+        - name: dev-version-file
+      run:
+        path: sh
+        args:
+        - -e
+        - -c
+        - |
+          cd resource-tutorial
+          git log --format='%H' -1 > ../dev-version-file/file
+    on_success:
+      put: dev-version-file
+      params:
+        file: dev-version-file/file
 
 resources:
 - name: resource-tutorial
@@ -18,11 +38,11 @@ resources:
   source:
     uri: https://github.com/timmow/concourse-promote-spike.git
 
-- name: dev-version
+- name: dev-version-s3
   type: s3
   source:
     bucket: concourse-promote-spike-tmower
     region_name: {{aws_region}}
     access_key_id: {{aws_access_key_id}}
     secret_access_key: {{aws_secret_access_key}}
-    versioned_file: bosh-secrets.yml
+    versioned_file: dev-version
