@@ -4,6 +4,11 @@ jobs:
   public: true
   plan:
   - get: resource-tutorial
+  - get: dev-version-s3
+  - get: dev-semver-s3
+    params: 
+        bump: patch
+        pre: dev
   - task: hello-world
     config:
       platform: linux
@@ -14,9 +19,10 @@ jobs:
   - task: get-git-version
     config:
       platform: linux
-      image: docker:///busybox
+      image: docker:///debian
       inputs: 
         - name: resource-tutorial
+        - name: dev-version-s3
       outputs:
         - name: dev-version-file
       run:
@@ -25,21 +31,43 @@ jobs:
         - -e
         - -c
         - |
-          cd resource-tutorial
-          git log --format='%H' -1 > ../dev-version-file/file
-    on_success:
-      put: dev-version-file
-      params:
-        file: dev-version-file/file
+          echo 'cant be bothered to wait for apt'  > ../dev-version-file/file
+          # apt-get update
+          # apt-get install git -y
+          # cd resource-tutorial
+          # git log --format='%H' -1 > ../dev-version-file/file
+  - put: dev-version-s3
+    params:
+      file: dev-version-file/file
+  - put: dev-semver-s3
+    params:
+      file: dev-version-s3/number
+  - put: resource-tutorial
+    params:
+      repository: resource-tutorial
+      tag: dev-version-s3/number
+      only_tag: true
 
 resources:
 - name: resource-tutorial
   type: git
   source:
     uri: https://github.com/timmow/concourse-promote-spike.git
+    private_key: {{private_key}}
+      
+
 
 - name: dev-version-s3
   type: s3
+  source:
+    bucket: concourse-promote-spike-tmower
+    region_name: {{aws_region}}
+    access_key_id: {{aws_access_key_id}}
+    secret_access_key: {{aws_secret_access_key}}
+    versioned_file: dev-version
+
+- name: dev-semver-s3
+  type: semver
   source:
     bucket: concourse-promote-spike-tmower
     region_name: {{aws_region}}

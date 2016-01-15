@@ -15,15 +15,18 @@ config="${SCRIPT_DIR}/../pipelines/dev.yml"
 
 generate_vars_file() {
    set -u # Treat unset variables as an error when substituting
+	 PRIVATE_KEY="$(cat deploy | sed 's/^/  /')"
    cat <<EOF
 ---
 aws_region: ${AWS_DEFAULT_REGION:-eu-west-1}
 aws_access_key_id: ${AWS_ACCESS_KEY_ID}
 aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+private_key: |
+${PRIVATE_KEY}
 EOF
 }
 
-generate_vars_file > /dev/null # Check for missing vars
+generate_vars_file #> /dev/null # Check for missing vars
 
 bash "${SCRIPT_DIR}/deploy-pipeline.sh" \
    "${env}" "${pipeline}" "${config}" <(generate_vars_file)
